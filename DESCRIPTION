@@ -1,0 +1,27 @@
+Package: AFTtools
+Type: Package
+Title: Tools for the Data Preparation, Fitting and Diagnostics of Accelerated Failure Times Models
+Version: 0.1
+Date: 2015-11-13
+Authors@R: person("Veit", "Zoche-Golob", email = "zoche-golob@freenet.de", role = c("aut", "cre"))
+Description: Additional tools for parametric survival models, particularly with
+    interval censored data, that facilitate the data preparation and the selection
+    of the hazard function. Models with different distributions for the response
+    variable are fitted using parallel computation. Functions for several
+    diagnostical plots are provided.
+URL: http://github.com/VZoche-Golob/AFTtools/
+Depends:
+    R (>= 3.2.1),
+    snow,
+    snowfall,
+    survival
+Imports:
+    assertive,
+    magrittr
+Suggests:
+    knitr,
+    rmarkdown
+License: GPL-3 + file LICENSE
+LazyData: TRUE
+Encoding: UTF-8
+VignetteBuilder: knitr
