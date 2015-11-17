@@ -2,6 +2,7 @@
 
 export(compare_PSMdist)
 export(create_int2Surv)
+export(predict_survreg)
 export(show_comparison)
 import(snow)
 import(snowfall)

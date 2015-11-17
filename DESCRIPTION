@@ -9,7 +9,7 @@ Description: Additional tools for parametric survival models, particularly with
     of the hazard function. Models with different distributions for the response
     variable are fitted using parallel computation. Functions for several
     diagnostical plots are provided.
-URL: http://github.com/VZoche-Golob/AFTtools/
+URL: https://github.com/VZoche-Golob/AFTtools/
 Depends:
     R (>= 3.2.1),
     snow,
