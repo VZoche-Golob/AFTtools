@@ -35,7 +35,7 @@
 #' psm <- survival::survreg(as.formula("intS2 ~ region +
 #'  frailty(herd, sparse = FALSE)"), data = cbind(intS2, MIC))
 #' predict_survreg(psm, conf.int = 0.95)
-#' predict_survreg(psm, type = "survival", times = c(0.5, 1))
+#' predict_survreg(psm, type = "survival", times = c(0.5, 1), conf.int = 0.95)
 #' rm(psm, intS2)
 #'
 #' @import survival
@@ -45,7 +45,7 @@
 predict_survreg <- function(model,
                             data,
                            type = "quantile",
-                           quantiles = c(0.5, 0.9),
+                           quantiles = c(0.5, 0.1),
                            times = NULL,
                            conf.int = NULL,
                            R = 100,
@@ -163,15 +163,25 @@ predict_survreg <- function(model,
 
 
   # function to calculate bootstrap 'statistics'
-  bfun <- function(dd, fm = formula(model), bv = vals) {
+  bfun <- function(dd, id, iLP, fm = formula(model), bv = vals) {
 
     # packages have to be loaded for all clusters
     require(survival)
     require(magrittr)
 
-    bm <- survreg(fm, data = dd)
-    bex <- extract_model(bm)
-    sapply(bex[["linPred"]], do_predict, B = bex[["b"]], pv = bv)
+    bm <- try(survreg(fm, data = dd[id, ]), silent = TRUE)
+
+    if ("try-error" %in% class(bm)) {
+
+      return(NA)
+
+    } else {
+
+      bex <- extract_model(bm)
+      do_predict(bex[["linPred"]][iLP], B = bex[["b"]], pv = bv) %>%
+        return
+
+    }
 
   }
 
@@ -198,12 +208,54 @@ predict_survreg <- function(model,
 
   } else {
 
-browser()
+    outnames <- switch(type,
+                       quantile = list(quantile = vals,
+                                       ptime = c("point",
+                                                 paste(format(c(0.5 - conf.int / 2,
+                                                                0.5 + conf.int / 2) * 100,
+                                                              trim = TRUE,
+                                                              nsmall = 1),
+                                                       "%"))),
+                       survival = list(time = vals,
+                                       psurvival = c("point",
+                                                     paste(format(c(0.5 - conf.int / 2,
+                                                                    0.5 + conf.int / 2) * 100,
+                                                                  trim = TRUE,
+                                                                  nsmall = 1),
+                                                           "%"))))
 
-    bres <- boot::boot(data = data,
-                       statistic = bfun,
-                       R = R, sim = "parametric", parallel = parallel, ncpus = ncpus) #%>%
-    # boot::boot.ci(., conf = conf.int, type = "bca")[, c(4:5)]
+
+
+    out <- lapply(seq_along(ppred), function(x) {
+
+      bint <- boot::boot(data = data,
+                         statistic = bfun,
+                         R = R,
+                         strata = data[, "herd"],   # !!!
+                         iLP = x,
+                         parallel = parallel, ncpus = ncpus)
+
+      bint <- sapply(seq_along(vals), function(xx) {
+
+        boot::boot.ci(bint, conf = conf.int, type = "basic", index = xx)$basic[, 4:5]
+
+      }) %>%
+      {matrix(., ncol = 2, byrow = TRUE)}
+
+
+
+      X <- data.frame(extr[["ndat"]][x, -1], stringsAsFactors = FALSE)
+      names(X) <- names(extr[["ndat"]])[-1]
+
+
+
+      bout <- list(X = X,
+                   predictions = cbind(ppred[[x]], bint))
+      dimnames(bout[["predictions"]]) <- outnames
+
+      return(bout)
+
+    })
 
   }
 
