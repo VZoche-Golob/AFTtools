@@ -3,30 +3,38 @@
 #' Predicts survival or quantiles from Parametric Survival Models that were fitted
 #'  using \code{\link[survival]{survreg}}. Unlike with \code{\link[survival]{predict.survreg.penal}},
 #'  predictions are population averages (i.e. the frailty effect is set to its
-#'  \code{mean = 0}).
+#'  mean). The confidence bounds of the predictions are determined using parametric
+#'  bootstrap resampling.
 #'
-#' @param mod An object of class \code{\link[survival]{survreg}}.
+#' @param model An object of class \code{\link[survival]{survreg}}.
+#' @param data The data used to fit \code{model}.
 #' @param type A character string: one of \code{c("quantile", "survival")}.
 #' @param quantiles A numeric vector of survival quantiles for which the times
 #'  are predicted.
 #' @param times A numeric vector of survival times for which the survival percentage
 #'  should be predicted.
-#' @param conf.int Logical. Shall the confidence intervals be predicted as well?
-#'  (currently not supported)
+#' @param conf.int \code{NULL} or numeric vector of length one giving the desired
+#'  confidence level.
+#' @param R,
+#' @param parallel,
+#' @param ncpus,
+#' @param ... Further arguments passed to \code{\link[boot]{boot}}.
 #'
 #' @note Predictions are returned for all levels of all predictors (quantitative
 #'  predictors not tested yet).
+#' @note Unlike \code{\link[boot]{boot}}, if \code{ncpus = NULL} and \code{parallel != "no"}
+#'  all but one or two CPU are used on UNIX-Systems and on other platforms, respectively.
 #'
-#' @return For \code{type = survival} a data frame with one row per predictor level
-#'  and one column per requested time.
-#' @return For \code{type = quantile} a data frame with one row per predictor level
-#'  and one column per requested quantile.
+#' @return A list with one element per predictor level combination that contains a
+#'  data frame with one row and columns for the predictors, and a one or three column
+#'  matrix (point prediction, lower and upper confidence limit). For each desired
+#'  time / survival quantile, one row in the matrix is returned.
 #'
 #' @examples
 #' intS2 <- with(MIC, create_int2Surv(concentration, inhibition))
 #' psm <- survival::survreg(as.formula("intS2 ~ region +
 #'  frailty(herd, sparse = FALSE)"), data = cbind(intS2, MIC))
-#' predict_survreg(psm)
+#' predict_survreg(psm, conf.int = 0.95)
 #' predict_survreg(psm, type = "survival", times = c(0.5, 1))
 #' rm(psm, intS2)
 #'
@@ -34,15 +42,18 @@
 #' @importFrom magrittr '%>%'
 #'
 #' @export
-predict_survreg <- function(mod,
+predict_survreg <- function(model,
+                            data,
                            type = "quantile",
                            quantiles = c(0.5, 0.9),
                            times = NULL,
-                           conf.int = FALSE) {
+                           conf.int = NULL,
+                           R = 100,
+                           parallel = "snow",
+                           ncpus = NULL,
+                           ...) {
 
-  # TODO: include conf.int = TRUE (using bootstrap ?)
-
-  assertive::assert_is_all_of(mod, "survreg")
+  assertive::assert_is_all_of(model, "survreg")
   assertive::assert_all_are_true(type %in% c("quantile", "survival"))
   assertive::assert_is_numeric(quantiles)
   assertive::assert_is_vector(quantiles)
@@ -52,101 +63,151 @@ predict_survreg <- function(mod,
 
     assertive::assert_is_numeric(times)
     assertive::assert_is_vector(times)
+    assertive::assert_all_are_positive(times)
 
   }
-  assertive::assert_is_logical(conf.int)
-  assertive::assert_is_scalar(conf.int)
+  if (!is.null(conf.int)) {
 
-
-
-  predictors <- names(mod$xlevels) %>%
-  {.[which(!grepl("frailty.", .))]} %>%
-  {mod$xlevels[.]}
-
-  if (length(predictors) == 0) {
-
-    ndat <- data.frame(linPred = 0, V1 = 1)
-    mm <- model.matrix(as.formula("linPred ~ 1"), ndat)
-
-  } else {
-
-    ndat <- cbind(linPred = 0, expand.grid(predictors))
-    mm <- model.matrix(as.formula(paste("linPred",
-                                        paste0(names(predictors), collapse = " + "),
-                                        sep = " ~ ")),
-                       ndat)
+    assertive::assert_is_numeric(conf.int)
+    assertive::assert_is_of_length(conf.int, 1)
+    assertive::assert_all_are_in_range(conf.int, 0, 1,
+                                       lower_is_strict = TRUE, upper_is_strict = TRUE)
 
   }
 
-  linPred <- mm %*% coef(mod)[dimnames(mm)[[2]]]
+  if (is.null(ncpus) & parallel != "no") {
 
-  b <- mod$scale
+    if (assertive::is_unix()) {
+
+      ncpus <- system2(command = "lscpu", args = "-p", stdout = TRUE) %>%
+      {length(.) - 4} %>%
+        -1
+
+    } else {
+
+      message("'cpus' was not specified. 'cpus = 2' is used\n")
+      ncpus <- 2
+
+    }
+
+  }
+
+
+
+  extract_model <- function(mod) {
+
+    predictors <- names(mod$xlevels) %>%
+    {.[which(!grepl("frailty.", .))]} %>%
+    {mod$xlevels[.]}
+
+    if (length(predictors) == 0) {
+
+      ndat <- data.frame(linPred = 0, V1 = 1)
+      mm <- model.matrix(as.formula("linPred ~ 1"), ndat)
+
+    } else {
+
+      ndat <- cbind(linPred = 0, expand.grid(predictors))
+      mm <- model.matrix(as.formula(paste("linPred",
+                                          paste0(names(predictors), collapse = " + "),
+                                          sep = " ~ ")),
+                         ndat)
+
+    }
+
+    linPred <- mm %*% coef(mod)[dimnames(mm)[[2]]]
+
+    b <- mod$scale
+
+    return(list(ndat = ndat, linPred = linPred, b = b))
+
+  }
+
+  extr <- extract_model(mod = model)
+
+
+
+  vals <- switch(type,
+                 quantile = quantiles,
+                 survival = times)
 
   selection <- expand.grid(type = c("quantile", "survival"),
                            distr = c("weibull", "exponential", "lognormal", "loglogistic")) %>%
-                           {which(.[, "type"] == type & .[, "distr"] == mod$dist)}
-
+                           {which(.[, "type"] == type & .[, "distr"] == model$dist)}
   do_predict <- switch(selection,
-                       function(qs, B = b, lp = linPred ) {
-                         exp(B * log(-log(qs)) + lp)
+                       function(lp, B, pv) {
+                         exp(B * log(-log(pv)) + lp)
                        },  # quantile     weibull
-                       function(ts, B = b, lp = linPred) {
-                         exp(-exp((log(ts) - lp) / B))
+                       function(lp, B, pv) {
+                         exp(-exp((log(pv) - lp) / B))
                        },  # survival     weibull
-                       function(qs, B = b, lp = linPred ) {
-                         exp(log(-log(qs)) + lp)
+                       function(lp, B, pv ) {
+                         exp(log(-log(pv)) + lp)
                        },  # quantile exponential
-                       function(ts, B = b, lp = linPred) {
-                         exp(-exp((log(ts) - lp)))
+                       function(lp, B, pv) {
+                         exp(-exp((log(pv) - lp)))
                        },  # survival exponential
-                       function(qs, B = b, lp = linPred ) {
-                         exp(B * qnorm(1 - qs, mean = 0, sd = 1) + lp)
+                       function(lp, B, pv) {
+                         exp(B * qnorm(1 - pv, mean = 0, sd = 1) + lp)
                        },  # quantile   lognormal
-                       function(ts, B = b, lp = linPred) {
-                         1 - pnorm((log(ts) - lp) / B, mean = 0, sd = 1)
+                       function(lp, B, pv) {
+                         1 - pnorm((log(pv) - lp) / B, mean = 0, sd = 1)
                        },  # survival   lognormal
-                       function(qs, B = b, lp = linPred ) {
-                         exp(B * log(1 / qs - 1) + lp)
+                       function(lp, B, pv) {
+                         exp(B * log(1 / pv - 1) + lp)
                        },  # quantile loglogistic
-                       function(ts, B = b, lp = linPred) {
-                         1 / (1 + exp((log(ts) - lp) / B))
+                       function(lp, B, pv) {
+                         1 / (1 + exp((log(pv) - lp) / B))
                        })  # survival loglogistic
 
-  if (type == "quantile") {
 
-    if (length(predictors) == 0) {
 
-      out <- sapply(quantiles, do_predict) %>%
-      {matrix(., ncol = length(.))} %>%
-        data.frame
-      names(out) <- paste("Q", quantiles, sep = "")
+  # function to calculate bootstrap 'statistics'
+  bfun <- function(dd, fm = formula(model), bv = vals) {
 
-    } else {
+    # packages have to be loaded for all clusters
+    require(survival)
+    require(magrittr)
 
-      out <- data.frame(ndat[, -1], sapply(quantiles, do_predict))
-      names(out) <- c(names(ndat)[-1], paste("Q", quantiles, sep = ""))
-
-    }
+    bm <- survreg(fm, data = dd)
+    bex <- extract_model(bm)
+    sapply(bex[["linPred"]], do_predict, B = bex[["b"]], pv = bv)
 
   }
 
-  if (type == "survival") {
 
-    if (length(predictors) == 0) {
 
-      out <- sapply(times, do_predict) %>%
-      {matrix(., ncol = length(.))} %>%
-        data.frame
-      names(out) <- paste("T", times, sep = "")
+  ppred <- lapply(extr[["linPred"]], do_predict, B = extr[["b"]], pv = vals)  # point predictions
 
-    } else {
+  if (is.null(conf.int)) {
 
-      out <- data.frame(ndat[, -1], sapply(times, do_predict))
-      names(out) <- c(names(ndat)[-1], paste("T", times, sep = ""))
+    outnames <- switch(type,
+                       quantile = list(quantile = vals, ptime = "point"),
+                       survival = list(time = vals, psurvival = "point"))
 
-    }
+    out <- lapply(seq_along(ppred), function(x) {
+
+      X <- data.frame(extr[["ndat"]][x, -1], stringsAsFactors = FALSE)
+      names(X) <- names(extr[["ndat"]])[-1]
+      list(X = X,
+           predictions = matrix(ppred[[x]], ncol = 1,
+                                dimnames = outnames)) %>%
+        return
+
+    })
+
+  } else {
+
+browser()
+
+    bres <- boot::boot(data = data,
+                       statistic = bfun,
+                       R = R, sim = "parametric", parallel = parallel, ncpus = ncpus) #%>%
+    # boot::boot.ci(., conf = conf.int, type = "bca")[, c(4:5)]
 
   }
+
+
 
   return(out)
 
