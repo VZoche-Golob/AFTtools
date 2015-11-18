@@ -8,6 +8,8 @@
 #'
 #' @param model An object of class \code{\link[survival]{survreg}}.
 #' @param data The data used to fit \code{model}.
+#' @param strata The name of the variable in \code{data} that should be used as
+#'  \code{strata} by \code{\link[boot]{boot}}.
 #' @param type A character string: one of \code{c("quantile", "survival")}.
 #' @param quantiles A numeric vector of survival quantiles for which the times
 #'  are predicted.
@@ -31,12 +33,15 @@
 #'  time / survival quantile, one row in the matrix is returned.
 #'
 #' @examples
+#' \donttest{
 #' intS2 <- with(MIC, create_int2Surv(concentration, inhibition))
 #' psm <- survival::survreg(as.formula("intS2 ~ region +
 #'  frailty(herd, sparse = FALSE)"), data = cbind(intS2, MIC))
-#' predict_survreg(psm, conf.int = 0.95)
-#' predict_survreg(psm, type = "survival", times = c(0.5, 1), conf.int = 0.95)
+#' predict_survreg(psm, data = cbind(intS2, MIC), strata = "herd", conf.int = 0.95)
+#' predict_survreg(psm, data = cbind(intS2, MIC), strata = "herd",
+#'  type = "survival", times = c(0.5, 1), conf.int = 0.95)
 #' rm(psm, intS2)
+#' }
 #'
 #' @import survival
 #' @importFrom magrittr '%>%'
@@ -44,6 +49,7 @@
 #' @export
 predict_survreg <- function(model,
                             data,
+                            strata = NULL,
                            type = "quantile",
                            quantiles = c(0.5, 0.1),
                            times = NULL,
@@ -54,6 +60,13 @@ predict_survreg <- function(model,
                            ...) {
 
   assertive::assert_is_all_of(model, "survreg")
+  if (!is.null(strata)) {
+
+    assertive::assert_is_character(strata)
+    assertive::assert_is_of_length(strata, 1)
+    assertive::assert_all_are_true(strata %in% names(data))
+
+  }
   assertive::assert_all_are_true(type %in% c("quantile", "survival"))
   assertive::assert_is_numeric(quantiles)
   assertive::assert_is_vector(quantiles)
@@ -231,13 +244,16 @@ predict_survreg <- function(model,
       bint <- boot::boot(data = data,
                          statistic = bfun,
                          R = R,
-                         strata = data[, "herd"],   # !!!
+                         strata = data[, strata],
                          iLP = x,
                          parallel = parallel, ncpus = ncpus)
 
       bint <- sapply(seq_along(vals), function(xx) {
 
-        boot::boot.ci(bint, conf = conf.int, type = "basic", index = xx)$basic[, 4:5]
+        quantile(bint$t[, xx],
+                 probs = c(0.5 - conf.int / 2,
+                           0.5 + conf.int / 2),
+                 na.rm = TRUE)
 
       }) %>%
       {matrix(., ncol = 2, byrow = TRUE)}

@@ -4,11 +4,17 @@
 \alias{predict_survreg}
 \title{Predictions from Parametric Survival Models}
 \usage{
-predict_survreg(mod, type = "quantile", quantiles = c(0.5, 0.9),
-  times = NULL, conf.int = FALSE)
+predict_survreg(model, data, strata = NULL, type = "quantile",
+  quantiles = c(0.5, 0.1), times = NULL, conf.int = NULL, R = 100,
+  parallel = "snow", ncpus = NULL, ...)
 }
 \arguments{
-\item{mod}{An object of class \code{\link[survival]{survreg}}.}
+\item{model}{An object of class \code{\link[survival]{survreg}}.}
+
+\item{data}{The data used to fit \code{model}.}
+
+\item{strata}{The name of the variable in \code{data} that should be used as
+\code{strata} by \code{\link[boot]{boot}}.}
 
 \item{type}{A character string: one of \code{c("quantile", "survival")}.}
 
@@ -18,32 +24,46 @@ are predicted.}
 \item{times}{A numeric vector of survival times for which the survival percentage
 should be predicted.}
 
-\item{conf.int}{Logical. Shall the confidence intervals be predicted as well?
- (currently not supported)}
+\item{conf.int}{\code{NULL} or numeric vector of length one giving the desired
+confidence level.}
+
+\item{R,}{}
+
+\item{parallel,}{}
+
+\item{ncpus,}{}
+
+\item{...}{Further arguments passed to \code{\link[boot]{boot}}.}
 }
 \value{
-For \code{type = survival} a data frame with one row per predictor level
- and one column per requested time.
-
-For \code{type = quantile} a data frame with one row per predictor level
- and one column per requested quantile.
+A list with one element per predictor level combination that contains a
+ data frame with one row and columns for the predictors, and a one or three column
+ matrix (point prediction, lower and upper confidence limit). For each desired
+ time / survival quantile, one row in the matrix is returned.
 }
 \description{
 Predicts survival or quantiles from Parametric Survival Models that were fitted
  using \code{\link[survival]{survreg}}. Unlike with \code{\link[survival]{predict.survreg.penal}},
  predictions are population averages (i.e. the frailty effect is set to its
- \code{mean = 0}).
+ mean). The confidence bounds of the predictions are determined using parametric
+ bootstrap resampling.
 }
 \note{
 Predictions are returned for all levels of all predictors (quantitative
  predictors not tested yet).
+
+Unlike \code{\link[boot]{boot}}, if \code{ncpus = NULL} and \code{parallel != "no"}
+ all but one or two CPU are used on UNIX-Systems and on other platforms, respectively.
 }
 \examples{
+\donttest{
 intS2 <- with(MIC, create_int2Surv(concentration, inhibition))
 psm <- survival::survreg(as.formula("intS2 ~ region +
  frailty(herd, sparse = FALSE)"), data = cbind(intS2, MIC))
-predict_survreg(psm)
-predict_survreg(psm, type = "survival", times = c(0.5, 1))
+predict_survreg(psm, data = cbind(intS2, MIC), strata = "herd", conf.int = 0.95)
+predict_survreg(psm, data = cbind(intS2, MIC), strata = "herd",
+ type = "survival", times = c(0.5, 1), conf.int = 0.95)
 rm(psm, intS2)
+}
 }
 
