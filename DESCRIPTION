@@ -17,6 +17,7 @@ Depends:
     survival
 Imports:
     assertive,
+    interval,
     magrittr
 Suggests:
     knitr,

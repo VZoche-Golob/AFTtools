@@ -6,7 +6,7 @@
 \usage{
 predict_survreg(model, data, strata = NULL, type = "quantile",
   quantiles = c(0.5, 0.1), times = NULL, conf.int = NULL, R = 100,
-  parallel = "snow", ncpus = NULL, ...)
+  parallel = "no", ncpus = NULL, ...)
 }
 \arguments{
 \item{model}{An object of class \code{\link[survival]{survreg}}.}
@@ -27,7 +27,7 @@ should be predicted.}
 \item{conf.int}{\code{NULL} or numeric vector of length one giving the desired
 confidence level.}
 
-\item{R,}{}
+\item{R}{The number of bootstrap replicates. Passed to \code{\link[boot]{boot}}.}
 
 \item{parallel,}{}
 
@@ -60,9 +60,10 @@ Unlike \code{\link[boot]{boot}}, if \code{ncpus = NULL} and \code{parallel != "n
 intS2 <- with(MIC, create_int2Surv(concentration, inhibition))
 psm <- survival::survreg(as.formula("intS2 ~ region +
  frailty(herd, sparse = FALSE)"), data = cbind(intS2, MIC))
-predict_survreg(psm, data = cbind(intS2, MIC), strata = "herd", conf.int = 0.95)
 predict_survreg(psm, data = cbind(intS2, MIC), strata = "herd",
- type = "survival", times = c(0.5, 1), conf.int = 0.95)
+ conf.int = 0.95, parallel = "snow")
+predict_survreg(psm, data = cbind(intS2, MIC), strata = "herd",
+ type = "survival", times = c(0.5, 1), conf.int = 0.95, parallel = "snow")
 rm(psm, intS2)
 }
 }
