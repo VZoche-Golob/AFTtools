@@ -17,7 +17,7 @@
 #'  should be predicted.
 #' @param conf.int \code{NULL} or numeric vector of length one giving the desired
 #'  confidence level.
-#' @param R,
+#' @param R The number of bootstrap replicates. Passed to \code{\link[boot]{boot}}.
 #' @param parallel,
 #' @param ncpus,
 #' @param ... Further arguments passed to \code{\link[boot]{boot}}.
@@ -37,9 +37,10 @@
 #' intS2 <- with(MIC, create_int2Surv(concentration, inhibition))
 #' psm <- survival::survreg(as.formula("intS2 ~ region +
 #'  frailty(herd, sparse = FALSE)"), data = cbind(intS2, MIC))
-#' predict_survreg(psm, data = cbind(intS2, MIC), strata = "herd", conf.int = 0.95)
 #' predict_survreg(psm, data = cbind(intS2, MIC), strata = "herd",
-#'  type = "survival", times = c(0.5, 1), conf.int = 0.95)
+#'  conf.int = 0.95, parallel = "snow")
+#' predict_survreg(psm, data = cbind(intS2, MIC), strata = "herd",
+#'  type = "survival", times = c(0.5, 1), conf.int = 0.95, parallel = "snow")
 #' rm(psm, intS2)
 #' }
 #'
@@ -55,7 +56,7 @@ predict_survreg <- function(model,
                            times = NULL,
                            conf.int = NULL,
                            R = 100,
-                           parallel = "snow",
+                           parallel = "no",
                            ncpus = NULL,
                            ...) {
 
