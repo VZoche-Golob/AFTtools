@@ -54,6 +54,11 @@
 #' compare_PSMdist(as.formula("intS2 ~ region"), Data = cbind(intS2, MIC))
 #' compare_PSMdist(as.formula("intS2 ~ region + frailty(herd, sparse = FALSE)"),
 #'  Data = cbind(intS2, MIC), cpus = 2, control = survreg.control(maxiter = 100))
+#' compare_PSMdist(as.formula("intS2 ~ 1 + frailty(herd, sparse = FALSE)"),
+#'  Data = cbind(intS2, MIC), cpus = 2, control = survreg.control(maxiter = 100))
+#'
+#' @seealso \code{\link{show_comparison}} produces a print- and readable table of
+#'  the comparison.
 #'
 #' @import survival
 #' @import snow
@@ -123,14 +128,14 @@ compare_PSMdist <- function(Formula, Data,
       fit = as.logical(NA),
       mes = as.character(NA),
       aic = as.numeric(NA),
-      effects = matrix(NA, ncol = 3, nrow = length(.),
+      effects = matrix(as.numeric(NA), ncol = 3, nrow = length(.),
                        dimnames = list(.,
                                        c("coef",
                                          paste(format(c(0.5 - 0.95 / 2, 0.5 + 0.95 / 2) * 100,
                                                       trim = TRUE,
                                                       nsmall = 1),
                                                "%")))),
-      logscale = matrix(NA, ncol = 3,
+      logscale = matrix(as.numeric(NA), ncol = 3,
                         dimnames = list(distr,
                                         c("logScale",
                                           paste(format(c(0.5 - 0.95 / 2, 0.5 + 0.95 / 2) * 100,
@@ -177,10 +182,13 @@ compare_PSMdist <- function(Formula, Data,
           psm[["aic"]] <- AIC(mod)
 
           t1 <- coef(mod) %>%
-          {.[which(names(.) %in% dimnames(psm[["effects"]])[[1]])]}
+          {.[which(names(.) %in% dimnames(psm[["effects"]])[[1]])]} %>%
+          {matrix(., ncol = 1)}
           t2 <- confint(mod, level = level) %>%
-          {.[which(dimnames(.)[[1]] %in% dimnames(psm[["effects"]])[[1]]), ]}
-          psm[["effects"]] <- cbind(coef = t1, t2)
+          {.[which(dimnames(.)[[1]] %in% dimnames(psm[["effects"]])[[1]]), ]} %>%
+          {matrix(., ncol = 2)}
+          psm[["effects"]] <- matrix(cbind(t1, t2), ncol = 3,
+                                     dimnames = dimnames(psm[["effects"]]))
 
           if ("Log(scale)" %in% dimnames(summary(mod)$table)[[1]]) {
 

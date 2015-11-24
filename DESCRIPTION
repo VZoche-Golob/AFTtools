@@ -1,7 +1,7 @@
 Package: AFTtools
 Type: Package
 Title: Tools for the Data Preparation, Fitting and Diagnostics of Accelerated Failure Times Models
-Version: 0.1
+Version: 0.1.1
 Date: 2015-11-13
 Authors@R: person("Veit", "Zoche-Golob", email = "zoche-golob@freenet.de", role = c("aut", "cre"))
 Description: Additional tools for parametric survival models, particularly with

@@ -43,34 +43,55 @@ show_comparison <- function(comp) {
 
 
 
+  nf <- function(xx) {
+
+    if (any(is.na(xx[1:3]))) {
+
+      return(as.character(NA))
+
+    } else {
+
+      paste0(format(xx[1], digits = 1, width = 5, nsmall = 2),
+             " [",
+             format(xx[2], digits = 1, width = 5, nsmall = 2),
+             ", ",
+             format(xx[3], digits = 1, width = 5, nsmall = 2),
+             "]",
+             collapse = "") %>%
+        return
+
+    }
+
+  }
+
+
+
   tab <- with(comp, {
 
     sapply(seq_along(Distribution), function(x) {
 
-      ef <- Effects[,,x] %>%
-      {apply(.,
-             1,
-             function(xx)
-               paste0(format(xx[1], digits = 1, width = 5, nsmall = 2),
-                      " [",
-                      format(xx[2], digits = 1, width = 5, nsmall = 2),
-                      ", ",
-                      format(xx[3], digits = 1, width = 5, nsmall = 2),
-                      "]",
-                      collapse = ""))}
+      ef <- Effects[, , x] %>%
+      {if (!is.null(dim(.))) {
+
+        apply(., 1, nf)
+
+      } else {
+
+        nf(.)
+
+      }}
 
       c(Distribution = Distribution[x],
         Fitted = Fit[[x]],
-        AIC = format(AIC[[x]], digits = 1, width = 7, nsmall = 1),
-        'Var(frailty)' = format(FrailtyVar[[x]], digits = 1, width = 5, nsmall = 2),
+        AIC = ifelse(is.na(AIC[[x]]), NA,
+                           format(AIC[[x]], digits = 1, width = 7, nsmall = 1)),
+        'Var(frailty)' = ifelse(is.na(FrailtyVar[[x]]), NA,
+                                      format(FrailtyVar[[x]],
+                                             digits = 1,
+                                             width = 5,
+                                             nsmall = 2)),
         Coef = ef,
-        'log(scale)' = paste0(format(logScale[x, 1], digits = 1, width = 5, nsmall = 2),
-                              " [",
-                              format(logScale[x, 2], digits = 1, width = 5, nsmall = 2),
-                              ", ",
-                              format(logScale[x, 3], digits = 1, width = 5, nsmall = 2),
-                              "]",
-                              collapse = "")) %>%
+        'log(scale)' = nf(logScale[x, ])) %>%
         return
 
     })
