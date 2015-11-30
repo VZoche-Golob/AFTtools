@@ -53,9 +53,6 @@ Predicts survival or quantiles from Parametric Survival Models that were fitted
 Predictions are returned for all levels of all predictors (quantitative
  predictors not tested yet).
 
-Currently only models with exponential, weibull, lognormal, and log-logistic
- distributed survival times and right- or interval-censored data are supported.
-
 Unlike \code{\link[boot]{boot}}, if \code{ncpus = NULL} and \code{parallel != "no"}
  all but one or two CPU are used on UNIX-Systems and on other platforms, respectively.
 }
