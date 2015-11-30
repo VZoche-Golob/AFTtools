@@ -13,4 +13,7 @@ models with frailties can be made using `predict_survreg()`. Bootstrap confidenc
 intervals of the predictions are also provided.  
 
 The functions `AFTplot()`, `CSRplot()`, `Iplot()`, and `NPplot()` produce diagnostical 
-plots.
+plots.  
+
+
+See [NEWS](NEWS.md) for version changes.  

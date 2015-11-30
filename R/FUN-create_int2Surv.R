@@ -40,7 +40,6 @@ create_int2Surv <- function(obsTimes, ev, defTimes = unique(obsTimes)) {
 
 
   Time2 <- obsTimes
-  Time2[!ev] <- NA
 
   Time <- sapply(obsTimes,
                  function(x, dt) {
@@ -54,7 +53,8 @@ create_int2Surv <- function(obsTimes, ev, defTimes = unique(obsTimes)) {
                    return(out)
 
                  }, dt = defTimes)
-  Time[Time2 == min(Time2, na.rm = TRUE)] <- NA
+  Time[Time2 == min(defTimes, na.rm = TRUE)] <- NA  # left open intervals
+  Time[!ev] <- obsTimes[!ev] ; Time2[!ev] <- NA  # right open intervals
 
   return(survival::Surv(time = Time,
                         time2 = Time2,

@@ -9,7 +9,8 @@
 #' @param model An object of class \code{\link[survival]{survreg}}.
 #' @param data The data used to fit \code{model}.
 #' @param strata The name of the variable in \code{data} that should be used as
-#'  \code{strata} by \code{\link[boot]{boot}}.
+#'  \code{strata} by \code{\link[boot]{boot}}. (It seems to be a good idea to use
+#'  the frailty variable as \code{strata}.)
 #' @param type A character string: one of \code{c("quantile", "survival")}.
 #' @param quantiles A numeric vector of survival quantiles for which the times
 #'  are predicted.

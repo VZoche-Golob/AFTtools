@@ -11,6 +11,9 @@
 #' @references
 #'  P. Glomb, „Statistische Modelle und Methoden in der Analyse von Lebenszeitdaten“,
 #'  Diplomarbeit, Carl-von-Ossietzky-Universität, Oldenburg, 2007.
+#' @references
+#'  C. P. Farrington, ‘Residuals for Proportional Hazards Models with Interval-Censored
+#'  Survival Data’, Biometrics, vol. 56, no. 2, pp. 473–482, 2000.
 #'
 #' @import survival
 #' @importFrom magrittr '%>%'
@@ -22,27 +25,8 @@ CSRplot <- function(model) {
 
 
 
-  # extract Cox-Snell-Residuals
-  CSresiduals <- function(mod) {
-
-    CS_transform <- function(x, distr) {
-
-      switch(distr,
-             weibull = exp(x),
-             exponential = exp(x),
-             lognormal = -log(1 - pnorm(x, mean = 0, sd = 1)),
-             loglogistic = log(1 + exp(x)),
-             stop("Unknown model distribution."))
-
-    }
-
-    res <- residuals(mod, "working") %>%
-      CS_transform(., mod$dist) %>%
-      return
-
-  }
-  res <- CSresiduals(model) %>%
-  {survfit(Surv(., model$y[, ncol(model$y)] > 0) ~ 1)}
+  res <- -log(predict(model)) %>%
+   {survfit(Surv(., model$y[, ncol(model$y)] > 0) ~ 1)}
 
 
 

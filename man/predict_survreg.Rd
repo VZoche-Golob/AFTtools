@@ -14,7 +14,8 @@ predict_survreg(model, data, strata = NULL, type = "quantile",
 \item{data}{The data used to fit \code{model}.}
 
 \item{strata}{The name of the variable in \code{data} that should be used as
-\code{strata} by \code{\link[boot]{boot}}.}
+\code{strata} by \code{\link[boot]{boot}}. (It seems to be a good idea to use
+the frailty variable as \code{strata}.)}
 
 \item{type}{A character string: one of \code{c("quantile", "survival")}.}
 

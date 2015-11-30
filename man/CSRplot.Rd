@@ -20,5 +20,8 @@ If the \code{model} includes frailties, they have to be estimated with
 \references{
 P. Glomb, „Statistische Modelle und Methoden in der Analyse von Lebenszeitdaten“,
  Diplomarbeit, Carl-von-Ossietzky-Universität, Oldenburg, 2007.
+
+C. P. Farrington, ‘Residuals for Proportional Hazards Models with Interval-Censored
+ Survival Data’, Biometrics, vol. 56, no. 2, pp. 473–482, 2000.
 }
 
