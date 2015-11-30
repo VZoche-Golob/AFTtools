@@ -5,7 +5,7 @@
 \title{Predictions from Parametric Survival Models}
 \usage{
 predict_survreg(model, data, strata = NULL, type = "quantile",
-  quantiles = c(0.5, 0.1), times = NULL, conf.int = NULL, R = 100,
+  quantiles = c(0.5, 0.1), times = NULL, conf.int = NULL, R = 500,
   parallel = "no", ncpus = NULL, ...)
 }
 \arguments{
@@ -45,13 +45,16 @@ A list with one element per predictor level combination that contains a
 \description{
 Predicts survival or quantiles from Parametric Survival Models that were fitted
  using \code{\link[survival]{survreg}}. Unlike with \code{\link[survival]{predict.survreg.penal}},
- predictions are population averages (i.e. the frailty effect is set to its
- mean). The confidence bounds of the predictions are determined using parametric
+ predictions are population averages (i.e. the frailty effect is fixed at its
+ mean). The confidence bounds of the predictions are determined using nonparametric
  bootstrap resampling.
 }
 \note{
 Predictions are returned for all levels of all predictors (quantitative
  predictors not tested yet).
+
+Currently only models with exponential, weibull, lognormal, and log-logistic
+ distributed survival times and right- or interval-censored data are supported.
 
 Unlike \code{\link[boot]{boot}}, if \code{ncpus = NULL} and \code{parallel != "no"}
  all but one or two CPU are used on UNIX-Systems and on other platforms, respectively.

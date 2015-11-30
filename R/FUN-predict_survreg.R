@@ -2,8 +2,8 @@
 #'
 #' Predicts survival or quantiles from Parametric Survival Models that were fitted
 #'  using \code{\link[survival]{survreg}}. Unlike with \code{\link[survival]{predict.survreg.penal}},
-#'  predictions are population averages (i.e. the frailty effect is set to its
-#'  mean). The confidence bounds of the predictions are determined using parametric
+#'  predictions are population averages (i.e. the frailty effect is fixed at its
+#'  mean). The confidence bounds of the predictions are determined using nonparametric
 #'  bootstrap resampling.
 #'
 #' @param model An object of class \code{\link[survival]{survreg}}.
@@ -25,6 +25,8 @@
 #'
 #' @note Predictions are returned for all levels of all predictors (quantitative
 #'  predictors not tested yet).
+#' @note Currently only models with exponential, weibull, lognormal, and log-logistic
+#'  distributed survival times and right- or interval-censored data are supported.
 #' @note Unlike \code{\link[boot]{boot}}, if \code{ncpus = NULL} and \code{parallel != "no"}
 #'  all but one or two CPU are used on UNIX-Systems and on other platforms, respectively.
 #'
@@ -56,7 +58,7 @@ predict_survreg <- function(model,
                            quantiles = c(0.5, 0.1),
                            times = NULL,
                            conf.int = NULL,
-                           R = 100,
+                           R = 500,
                            parallel = "no",
                            ncpus = NULL,
                            ...) {
@@ -67,6 +69,10 @@ predict_survreg <- function(model,
     assertive::assert_is_character(strata)
     assertive::assert_is_of_length(strata, 1)
     assertive::assert_all_are_true(strata %in% names(data))
+
+  } else {
+
+    strata <- rep(1,n)
 
   }
   assertive::assert_all_are_true(type %in% c("quantile", "survival"))
@@ -177,14 +183,96 @@ predict_survreg <- function(model,
 
 
 
+#   # parametric bootstrap
+#   # function to simulate new responses from model
+#   # inspired by lme4::simulate.merMod
+#   bran <- function(data, mle = list(Dist, LP, Sc, Resp)) {
+#
+#     # packages have to be loaded for all clusters
+#     library(magrittr)
+#
+#     sim <- switch(mle$Dist,
+#                   exponential = function(mdLP, mdScale) {
+#                     rweibull(1,
+#                              shape = 1/mdScale,
+#                              scale = exp(mdLP))
+#                   },
+#                   weibull = function(mdLP, mdScale) {
+#                     rweibull(1,
+#                              shape = 1/mdScale,
+#                              scale = exp(mdLP))
+#                   },
+#                   lognormal = function(mdLP, mdScale) {
+#                     exp(mdLP + mdScale * rnorm(1))
+#                   },
+#                   loglogistic = function(mdLP, mdScale) {
+#                     exp(mdLP + mdScale * rlogis(1))
+#                   })
+#
+#     out <- data
+#     oldResp <- out[, mle$Resp]
+#
+#     simdat <- sapply(mle$LP, sim, mdScale = mle$Sc)
+#
+#
+#     # right-censored data
+#     if (attr(oldResp, "type") == "right") {
+#
+#       cens <- simdat > max(oldResp, na.rm = TRUE)
+#       simdat[cens] <- max(oldResp, na.rm = TRUE)
+#       out[, mle$Resp] <- Surv(simdat, cens)
+#
+#     }
+#
+#     # interval-censored data
+#     if (attr(oldResp, "type") %in% c("interval", "interval2")) {
+#
+#       simdat <- sapply(simdat, function(x, oT = c(-Inf, sort(unique(oldResp))[-1], Inf)) {
+#         tmp <- c(max(oT[which(oT < x)]), min(oT[which(oT >= x)]))
+#         tmp[is.infinite(tmp)] <- NA
+#         return(tmp)
+#       }) %>%
+#       {Surv(time = .[1, ], time2 = .[2, ], type = "interval2")}
+#
+#      out[, mle$Resp] <- simdat
+#
+#     }
+#
+#
+#     return(out)
+#
+#   }
+#
+#
+#   # function to calculate bootstrap 'statistics'
+#   bfun <- function(data, iLP, fm, ds, bv) {
+#
+#     bm <- try(survival::survreg(formula = fm, data = data, dist = ds), silent = TRUE)
+#
+#     if ("try-error" %in% class(bm)) {
+#
+#       return(rep(NA, length(bv)))
+#
+#     } else {
+#
+#       bex <- extract_model(bm)
+#       return(do_predict(bex[["linPred"]][iLP], B = bex[["b"]], pv = bv))
+#
+#     }
+#
+#   }
+
+
+
+  # nonparametric bootstrap
   # function to calculate bootstrap 'statistics'
-  bfun <- function(dd, id, iLP, fm = formula(model), bv = vals) {
+  bfun <- function(dd, id, iLP, fm = formula(model), ds = model$dist, bv = vals) {
 
     # packages have to be loaded for all clusters
     require(survival)
     require(magrittr)
 
-    bm <- try(survreg(fm, data = dd[id, ]), silent = TRUE)
+    bm <- try(survreg(fm, data = dd[id, ], dist = ds), silent = TRUE)
 
     if ("try-error" %in% class(bm)) {
 
@@ -243,6 +331,23 @@ predict_survreg <- function(model,
 
     out <- lapply(seq_along(ppred), function(x) {
 
+#       # parametric bootstrap
+#       bint <- boot::boot(data = data,
+#                          statistic = bfun,
+#                          R = R,
+#                          sim = "parametric",
+#                          ran.gen = bran,
+#                          mle = list(Dist = model$dist,
+#                                     LP = model$linear.predictors,
+#                                     Sc = model$scale,
+#                                     Resp = as.character(terms(model)[[2]])),
+#                          iLP = x,
+#                          fm = formula(model),
+#                          ds = model$dist,
+#                          bv = vals,
+#                          parallel = parallel, ncpus = ncpus)
+
+      # nonparametric bootstrap
       bint <- boot::boot(data = data,
                          statistic = bfun,
                          R = R,
