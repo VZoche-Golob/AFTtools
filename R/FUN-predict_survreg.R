@@ -70,7 +70,7 @@ predict_survreg <- function(model,
 
   } else {
 
-    strata <- rep(1,n)
+    strata <- rep(1, nrow(data))
 
   }
   assertive::assert_all_are_true(type %in% c("quantile", "survival"))
