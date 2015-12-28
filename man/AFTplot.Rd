@@ -15,7 +15,7 @@ Accelerated Failure Time models are based on the assumption that different level
  survival time. Plotting the predicted survival time quantiles of different
  predictor levels against each other allows to assess the validity of the assumption.
  If the assumption is valid, the quantile pairs will approximately lie on a straight
- line.
+ line through the origin.
 }
 \note{
 If the \code{model} includes frailties, they have to be estimated with

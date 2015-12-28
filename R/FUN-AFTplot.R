@@ -5,7 +5,7 @@
 #'  survival time. Plotting the predicted survival time quantiles of different
 #'  predictor levels against each other allows to assess the validity of the assumption.
 #'  If the assumption is valid, the quantile pairs will approximately lie on a straight
-#'  line.
+#'  line through the origin.
 #'
 #' @note If the \code{model} includes frailties, they have to be estimated with
 #'  \code{sparse = FALSE} to allow predictions.
@@ -68,36 +68,25 @@ AFTplot <- function(model) {
              xlab = paste(fixEf[i], "==", model$xlevels[[i]][cbs[1, j]]),
              ylab = paste(fixEf[i], "==", model$xlevels[[i]][cbs[2, j]]))
 
-      if (ii + cbs[1, j] == 1) {
+       XX <- quantile(as.matrix(vals[[cbs[1, j]]]), probs = seq(0, 1, 0.1))
+       YY <- quantile(as.matrix(vals[[cbs[2, j]]]), probs = seq(0, 1, 0.1))
+       bb <- lm(YY ~ 0 + XX)$coefficients
 
-        lnb <- coef(model)[c(ii + cbs[2, j])]
+       stopifnot(length(bb) == 1)
 
-      } else {
+       abline(a = 0, b = bb, lty = 2)
 
-        if (ii + cbs[2, j] == 1) {
+      if (assertive::is_whole_number(ii / 4)) {
 
-          lnb <- -coef(model)[c(ii + cbs[1, j])]
-
-        } else {
-
-          lnb <- coef(model)[c(ii + cbs[2, j])] - coef(model)[c(ii + cbs[1, j])]
-
-        }
+        title(main = "Q-Q-Plot of predicted survival times",
+              outer = TRUE)
 
       }
-
-      abline(a = 0, b = exp(lnb))
+      ii <- ii + 1
 
     }
 
-    ii <- ii + length(model$xlevels[[i]])
-
   }
-
-  title(main = "Q-Q-Plot of predicted survival times",
-        outer = TRUE)
-
-
 
   par(par_set)
 

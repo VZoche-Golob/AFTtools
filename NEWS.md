@@ -7,11 +7,15 @@
 
 ##### Fixes
 * `predict_survreg` : Fixed the transfer of `strata = NULL` to `boot::boot`.  
+* `AFTplot` : Title on all plot pages.  
+
+##### Improvements
+* `AFTplot` : Added quantile regression line to facilitate interpretation.  
 
 
 
 ### Version 0.2
-2015-11-30
+finished: 2015-11-30
 
 ##### Fixes
 * `CSRplot` : Calculation of the Cox-Snell-Residuals corrected according to Farrington (2000)  
