@@ -8,7 +8,7 @@
 #'  survival for \code{model}. As non-parametric references, the Kaplan-Meier (for
 #'  right censored data) and the Turnbull (for interval censored data) models are
 #'  used by calling \code{\link[survival]{survfit}}.
-#'  Frailties are ignored for the non-parametric predictions.
+#'  Frailties and interactions are ignored for the non-parametric predictions.
 #'
 #' @note Currently only right- and interval-censored data have been tested.
 #'
@@ -33,6 +33,10 @@
 #' }
 #'
 #' @references
+#'  M. Fay, P. Shaw, „Exact and Asymptotic Weighted Logrank Tests for Interval
+#'  Censored Data: The interval R Package“, Journal of Statistical Software, Bd. 36,
+#'  Nr. 2, S. 1-34, 2010.
+#' @references
 #'  K. Goethals, B. Ampe, D. Berkvens, H. Laevens, P. Janssen, und L. Duchateau,
 #'  „Modeling interval-censored, clustered cow udder quarter infection times
 #'  through the shared gamma frailty model“, JABES, Bd. 14, Nr. 1, S. 1–14, März 2009.
@@ -52,7 +56,7 @@ NPplot <- function(model,
 
 
 
-  omit_frailties <- function(x) {
+  pimp_formula <- function(x) {
 
     assertive::assert_is_all_of(x, "formula")
 
@@ -64,9 +68,10 @@ NPplot <- function(model,
 
     } else {
 
-      del <- del[which(grepl("frailty(.+)", del))]
+      del1 <- del[which(grepl("frailty(.+)", del))]
+      del2 <- del[which(grepl("[:]", del))]
 
-      eval(parse(text = paste("return(update(x, . ~ . - ", del, "))", sep = "")))
+      eval(parse(text = paste("return(update(x, . ~ . - ", del1, " - ", del2, "))", sep = "")))
 
     }
   }
@@ -103,7 +108,7 @@ NPplot <- function(model,
   {.[which(!grepl("frailty.", .))]} %>%
   {model$xlevels[.]}
 
-  fm <- omit_frailties(formula(model))
+  fm <- pimp_formula(formula(model))
 
 
 
@@ -139,7 +144,7 @@ NPplot <- function(model,
 
   if (length(predictors) > 0) {
 
-    dfpred <- expand.grid(predictors, KEEP.OUT.ATTRS = FALSE)
+    dfpred <- expand.grid(predictors, KEEP.OUT.ATTRS = FALSE, stringsAsFactors = FALSE)
 
     par_set <- par(oma = c(4, 4, 3, 1),
                    mar = c(0, 0, 1.5, 0),
@@ -154,7 +159,7 @@ NPplot <- function(model,
                   ylim = c(0, 1),
                   new = FALSE)
       box()
-      if (assertive::is_equal_to(i / 3, round(i / 3)) |
+      if (assertive::is_equal_to((i + 1) / 4, round((i + 1) / 4)) |
           assertive::is_equal_to(i / 4, round(i / 4)) |
           (assertive::is_even(i) & nrow(dfpred) - i == 1)) axis(1)
       if (assertive::is_odd(i)) axis(2)
@@ -175,14 +180,14 @@ NPplot <- function(model,
                           "non-parametric"),
                lty = c(1, 2))
 
+        title(main = "Comparison of parametric and non-parametric predictions",
+              xlab = "t",
+              ylab = expression(hat(S) (t)),
+              outer = TRUE)
+
       }
 
     }
-
-    title(main = "Comparison of parametric and non-parametric predictions",
-          xlab = "t",
-          ylab = expression(hat(S) (t)),
-          outer = TRUE)
 
     par(par_set)
 

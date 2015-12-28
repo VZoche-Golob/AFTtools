@@ -8,6 +8,7 @@
 ##### Fixes
 * `predict_survreg` : Fixed the transfer of `strata = NULL` to `boot::boot`.  
 * `AFTplot` : Title on all plot pages.  
+* `NPplot` : Fixed handling of interaction terms in model formulas.  
 
 ##### Improvements
 * `AFTplot` : Added quantile regression line to facilitate interpretation.  

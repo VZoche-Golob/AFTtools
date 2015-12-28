@@ -24,7 +24,7 @@ Plots of the predicted survival of \code{model} and of corresponding non-paramet
  survival for \code{model}. As non-parametric references, the Kaplan-Meier (for
  right censored data) and the Turnbull (for interval censored data) models are
  used by calling \code{\link[survival]{survfit}}.
- Frailties are ignored for the non-parametric predictions.
+ Frailties and interactions are ignored for the non-parametric predictions.
 }
 \note{
 Currently only right- and interval-censored data have been tested.
@@ -44,6 +44,10 @@ rm(psm1, psm2, intS2)
 }
 }
 \references{
+M. Fay, P. Shaw, „Exact and Asymptotic Weighted Logrank Tests for Interval
+ Censored Data: The interval R Package“, Journal of Statistical Software, Bd. 36,
+ Nr. 2, S. 1-34, 2010.
+
 K. Goethals, B. Ampe, D. Berkvens, H. Laevens, P. Janssen, und L. Duchateau,
  „Modeling interval-censored, clustered cow udder quarter infection times
  through the shared gamma frailty model“, JABES, Bd. 14, Nr. 1, S. 1–14, März 2009.
