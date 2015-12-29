@@ -70,8 +70,18 @@ NPplot <- function(model,
 
       del1 <- del[which(grepl("frailty(.+)", del))]
       del2 <- del[which(grepl("[:]", del))]
+      if (any(!is.null(c(del1, del2)))) {
+        del <- c(del1, del2) %>%
+        {.[!is.null(.)]} %>%
+        {paste("-", .)} %>%
+        {paste0(., collapse = " ")}
+      } else {
 
-      eval(parse(text = paste("return(update(x, . ~ . - ", del1, " - ", del2, "))", sep = "")))
+        del <- NULL
+
+      }
+
+      eval(parse(text = paste("return(update(x, . ~ . ", del, "))", sep = "")))
 
     }
   }
@@ -113,12 +123,22 @@ NPplot <- function(model,
 
 
   # non-parametric
-  npL <- survfit(fm, data = data, se.fit = FALSE)
+  npL <- try(survfit(fm, data = data, se.fit = FALSE), silent = TRUE)
 
   # x-values
-  xv <- seq(1e-10,
-            max(npL$time[which(is.finite(npL$time))]),
-            length.out = 100)
+  if ("try-error" %in% class(npL)) {
+
+    xv <- seq(1e-10,
+              max(data[, as.character(fm[[2]])][, 1]),
+              length.out = 100)
+
+  } else {
+
+    xv <- seq(1e-10,
+              max(npL$time[which(is.finite(npL$time))]),
+              length.out = 100)
+
+  }
 
   if (type == "interval") {
 
@@ -168,7 +188,7 @@ NPplot <- function(model,
         polygon.icfit(gr[i])
 
       }
-      lines(npL[i], conf.int = FALSE, mark.time = FALSE, lty = 2)
+      if (!"try-error" %in% class(npL)) lines(x = npL[i], conf.int = FALSE, mark.time = FALSE, lty = 2)
       lines(xv, modpred[[i]][[2]])
 
       title(main = paste0(dfpred[i, ], collapse = ", "))
@@ -205,7 +225,7 @@ NPplot <- function(model,
       polygon.icfit(gr)
 
     }
-    lines(npL, conf.int = FALSE, mark.time = FALSE, lty = 2)
+    if (!"try-error" %in% class(npL)) lines(x = npL, conf.int = FALSE, mark.time = FALSE, lty = 2)
     lines(xv, modpred[[1]][[2]])
 
     title(main = "Comparison of parametric and\nnon-parametric predictions",
