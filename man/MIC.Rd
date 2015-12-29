@@ -16,10 +16,9 @@
   \item{\code{inhibition}    : Was inhibition of this S. aureus isolate observed?}
 }}
 \source{
-Knorr, N; Zoche-Golob, V; Krömker, V. Determination of Minimal
- Inhibitory Concentrations of Cephalonium, Cephapirin and Cefquinome Against
- Bovine Mastitis Pathogens From Subclinical Mastitis Considering Regional
- Variances Within the Scope of a Germany-wide Study. [Article in preparation]
+N. Wente, V. Zoche-Golob, V. Krömker, "Short communication:
+ Susceptibility to cephalosporins of bacteria causing bovine subclinical
+ mastitis in Germany". [Article in preparation]
 }
 \usage{
 MIC
