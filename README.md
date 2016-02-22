@@ -12,8 +12,7 @@ Population average predictions (survival and quantiles) from parametric survival
 models with frailties can be made using `predict_survreg()`. Bootstrap confidence 
 intervals of the predictions are also provided.  
 
-The functions `AFTplot()`, `CSRplot()`, `Iplot()`, and `NPplot()` produce diagnostical 
+The functions `AFTplot()`, `CSRplot()`, `Iplot()`, and `NPplot()` produce diagnostic 
 plots.  
 
-
-See [NEWS](NEWS.md) for version changes.  
+[![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.46383.svg)](http://dx.doi.org/10.5281/zenodo.46383) (Release version 0.2.1, see [NEWS](NEWS.md) for version changes.)   

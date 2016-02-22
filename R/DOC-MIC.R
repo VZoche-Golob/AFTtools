@@ -17,7 +17,7 @@
 #'   \item{\code{inhibition}    : Was inhibition of this S. aureus isolate observed?}
 #' }
 #'
-#' @source N. Wente, V. Zoche-Golob, V. Krömker, "Short communication:
+#' @source N. Wente, V. Zoche-Golob, M. Behr, V. Krömker, "Short communication:
 #'  Susceptibility to cephalosporins of bacteria causing bovine subclinical
 #'  mastitis in Germany". [Article in preparation]
 "MIC"

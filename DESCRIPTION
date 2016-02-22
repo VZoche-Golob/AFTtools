@@ -8,7 +8,7 @@ Description: Additional tools for parametric survival models, particularly with
     interval censored data, that facilitate the data preparation and the selection
     of the hazard function. Models with different distributions for the response
     variable are fitted using parallel computation. Functions for several
-    diagnostical plots are provided.
+    diagnostic plots are provided.
 URL: https://github.com/VZoche-Golob/AFTtools/
 Depends:
     R (>= 3.2.1),

@@ -1,0 +1,10 @@
+year <- sub("-.*", "", meta$Date)
+note <- sprintf("R package version %s", meta$Version)
+
+bibentry(bibtype = "Manual",
+         title = "{AFTtools}: Tools for the Data Preparation, Fitting and Diagnostics of Accelerated Failure Times Models",
+         author = c(person("Veit", "Zoche-Golob")),
+         year = year,
+         note = note,
+         url = "https://github.com/VZoche-Golob/AFTtools/",
+         doi = "10.5281/zenodo.46383")
