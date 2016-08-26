@@ -15,9 +15,9 @@
 #'  used. See \code{\link[survival]{survreg}} for the possible distributions.
 #' @param parallel Logical determinating parallel or sequential execution, passed
 #'  to \code{\link[snowfall]{sfInit}}.
-#' @param cpus,
-#' @param type,
-#' @param level,
+#' @param cpus Passed to \code{\link[snowfall]{sfInit}}.
+#' @param type Passed to \code{\link[snowfall]{sfInit}}.
+#' @param level Passed to \code{\link[snowfall]{sfInit}}.
 #' @param ... Further arguments passed to \code{\link[snowfall]{sfInit}},
 #'  \code{\link{confint}}, and \code{\link[survival]{survreg}}.
 #'
@@ -50,12 +50,14 @@
 #' }
 #'
 #' @examples
+#' \donttest{
 #' intS2 <- with(MIC, create_int2Surv(concentration, inhibition))
 #' compare_PSMdist(as.formula("intS2 ~ region"), Data = cbind(intS2, MIC))
 #' compare_PSMdist(as.formula("intS2 ~ region + frailty(herd, sparse = FALSE)"),
 #'  Data = cbind(intS2, MIC), cpus = 2, control = survreg.control(maxiter = 100))
 #' compare_PSMdist(as.formula("intS2 ~ 1 + frailty(herd, sparse = FALSE)"),
 #'  Data = cbind(intS2, MIC), cpus = 2, control = survreg.control(maxiter = 100))
+#' }
 #'
 #' @seealso \code{\link{show_comparison}} produces a print- and readable table of
 #'  the comparison.

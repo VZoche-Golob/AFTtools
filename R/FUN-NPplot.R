@@ -44,7 +44,6 @@
 #'  W. R. Swindell, „ACCELERATED FAILURE TIME MODELS PROVIDE A USEFUL STATISTICAL
 #'  FRAMEWORK FOR AGING RESEARCH“, Exp Gerontol, Bd. 44, Nr. 3, S. 190–200, März 2009.
 #'
-#' @import interval
 #' @import survival
 #' @importFrom magrittr '%>%'
 #'
@@ -142,7 +141,7 @@ NPplot <- function(model,
 
   if (type == "interval") {
 
-    gr <- icfit(fm, data = data, conf.int = FALSE)
+    gr <- interval::icfit(fm, data = data, conf.int = FALSE)
 
     # adaption of x-values
     xv <- seq(1e-10,

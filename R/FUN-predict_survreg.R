@@ -19,8 +19,8 @@
 #' @param conf.int \code{NULL} or numeric vector of length one giving the desired
 #'  confidence level.
 #' @param R The number of bootstrap replicates. Passed to \code{\link[boot]{boot}}.
-#' @param parallel,
-#' @param ncpus,
+#' @param parallel Passed to \code{\link[boot]{boot}}.
+#' @param ncpus Passed to \code{\link[boot]{boot}}.
 #' @param ... Further arguments passed to \code{\link[boot]{boot}}.
 #'
 #' @note Predictions are returned for all levels of all predictors (quantitative

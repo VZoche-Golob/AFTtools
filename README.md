@@ -16,3 +16,9 @@ The functions `AFTplot()`, `CSRplot()`, `Iplot()`, and `NPplot()` produce diagno
 plots.  
 
 [![DOI](https://zenodo.org/badge/doi/10.5281/zenodo.46383.svg)](http://dx.doi.org/10.5281/zenodo.46383) (Release version 0.2.1, see [NEWS](NEWS.md) for version changes.)   
+
+***
+
+#### Note:  
+
+`NPplot()` depends on [**interval**](https://cran.r-project.org/web/packages/interval/index.html) which requires the package [**Icens**](http://www.bioconductor.org/packages/release/bioc/html/Icens.html) from [Bioconductor](http://www.bioconductor.org/).
